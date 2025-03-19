@@ -1,4 +1,0 @@
-Test Case,Variant,Time (s),Penalty,Coverage,Theta,Count,T length
-UR1,One_pass_variant (No opt.),0.0015704631805419922,0.4375,1.0,1.0,54,8
-UR1,Optimized_pass_Pen opt,18.917658805847168,0.4375,1.0,1.0,4822,8
-UR1,Optimized_pass_overall,18.856446981430054,0.4375,1.0,1.0,8,8

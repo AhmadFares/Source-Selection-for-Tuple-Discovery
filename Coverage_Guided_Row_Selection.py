@@ -55,18 +55,23 @@ def coverage_guided_row_selection(input_table, UR, theta):
     Selects rows to maximize coverage while staying below threshold theta.
     Outputs `T` and the index `i` where it stopped.
     """
-    print(input_table.columns)
+    common_cols = [col for col in UR.columns if col in input_table.columns]
+    
+    if not common_cols:
+        print("No common columns between UR and T. Returning empty DataFrame.")
+        return pd.DataFrame(columns=input_table.columns), 0  # Return empty DataFrame
+    
     if "Identifiant" in input_table.columns:
-        input_table = input_table[["Identifiant"] + UR.columns.tolist()]
-    else:
-        input_table = input_table[UR.columns]
+         common_cols = ["Identifiant"] + common_cols
+    
+    input_table = input_table[common_cols]  
 
     selected_rows = []
     curr_coverage = 0
     count = 0
     count_if = 0
 
-    UR_values = {col: set(UR[col].dropna().values) for col in UR.columns if col != "Identifiant"}
+    UR_values = {col: set(UR[col].dropna().values) for col in common_cols if col != "Identifiant"}
 
     for i, row in enumerate(input_table.itertuples(index=False, name=None)):
         row_dict = dict(zip(input_table.columns, row))
@@ -163,7 +168,7 @@ def algo_main(input_table, UR, theta):
     """
     T, i = coverage_guided_row_selection(input_table, UR, theta)
     T, count = penalty_optimization(T, input_table, UR, i, theta)
-    #T, optcount = optimize_selection(T, UR)
+    T, optcount = optimize_selection(T, UR)
     return T
 
 # --- Execution ---
