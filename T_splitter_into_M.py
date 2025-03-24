@@ -79,7 +79,8 @@ def split_by_diagonal(df):
     # Reset index to prevent NaN issues
     M1 = pd.concat([identifiants, pd.concat([M1_top_left, M1_bottom_right], axis=1)], axis=1).reset_index(drop=True)
     M2 = pd.concat([identifiants, pd.concat([M2_top_right, M2_bottom_left], axis=1)], axis=1).reset_index(drop=True)
-
+    print("m1" ,M1)
+    print("m2", M2)
     return [M1, M2]
 
 
@@ -98,3 +99,31 @@ def split_by_keywords(df):
     return [M1, M2]
 
 
+def split_by_overlapping_rows(df, overlap_size=5):
+    """
+    Splits the DataFrame into two overlapping row-based sources:
+    - M1 contains all rows except the last `overlap_size` rows.
+    - M2 contains all rows except the first `overlap_size` rows.
+    - The middle part is overlapping between both M1 and M2.
+
+    Args:
+        df (DataFrame): The input dataset.
+        overlap_size (int): Number of overlapping rows (default: 5).
+
+    Returns:
+        List of DataFrames: [M1, M2] with overlapping rows.
+    """
+    if "Identifiant" not in df.columns:
+        raise ValueError("The table must contain an 'Identifiant' column.")
+
+    num_rows = len(df)
+    if overlap_size >= num_rows // 2:
+        raise ValueError("Overlap size is too large relative to dataset size.")
+
+    # M1: All rows except the last `overlap_size` rows
+    M1 = df.iloc[:-overlap_size].reset_index(drop=True)
+
+    # M2: All rows except the first `overlap_size` rows
+    M2 = df.iloc[overlap_size:].reset_index(drop=True)
+
+    return [M1, M2]

@@ -1,6 +1,6 @@
 import pandas as pd
-from Coverage_Guided_Row_Selection import algo_main, compute_overall_coverage
-from T_splitter_into_M import split_by_columns, split_by_diagonal, split_by_hybrid, split_by_keywords, split_by_rows
+from Coverage_Guided_Row_Selection import algo_main, compute_overall_coverage, compute_overall_penalty, optimize_selection
+from T_splitter_into_M import split_by_columns, split_by_diagonal, split_by_hybrid, split_by_keywords, split_by_overlapping_rows, split_by_rows
 from test_cases import TestCases
 
 def get_next_M(sources, i):
@@ -27,13 +27,14 @@ def multi_source_algorithm(sources, UR, theta):
         M_i = get_next_M(sources, i)
         if M_i is None:
             print("No more valid sources left.")
-            return T  # Stop and return the last obtained table
+            return T, i + 1    # Stop and return the last obtained table
         
         common_cols = [col for col in UR.columns if col in M_i.columns and col != "Identifiant"]
         
         if not common_cols:
             print(f"Skipping M_{i} as it has no common columns with UR.")
             i += 1
+            terminate=False
             continue
             
         # Apply the coverage-guided selection (blackbox function)
@@ -42,21 +43,21 @@ def multi_source_algorithm(sources, UR, theta):
         if T.empty:
             T = new_T
         else:
-            T = T.merge(new_T, on="Identifiant", how="outer")
+            T = T.set_index("Identifiant").combine_first(new_T.set_index("Identifiant")).reset_index()
         
         # Compute current coverage
         final_cov, _ = compute_overall_coverage(T, UR)
         
         if final_cov >= theta:
             print("M" , i, "was the last source needed", "Coverage: ", final_cov)
-            return T  # Stop if coverage requirement is met
+            return T, i + 1   # Stop if coverage requirement is met
         else:
             print("M" , i, "was not enough", "Coverage: ", final_cov)
             print(T)
             i += 1
             terminate = False  # Continue to the next source
 
-    return T  # Return the last obtained table, even if coverage is not met
+    return T, i + 1    # Return the last obtained table, even if coverage is not met
 
 
 # --- Main Function ---
@@ -69,20 +70,27 @@ def main():
     theta = 1  # Example coverage threshold
 
     # --- Choose one split method ---
-    #sources = split_by_rows(T_input)  
+    #Same schema:
+    sources = split_by_diagonal(T_input) 
+    #sources = split_by_rows(T_input) 
+    #sources = split_by_overlapping_rows(T_input, overlap_size=5) 
 
+    #Different schema:
     #sources = split_by_columns(T_input)  
     #sources = split_by_hybrid(T_input)  
-    #ssources = split_by_diagonal(T_input) 
-    sources = split_by_keywords(T_input)
-
-    T_output = multi_source_algorithm(sources, UR, theta)
+    #sources = split_by_keywords(T_input)
+    
+    
+    T_output, _ = multi_source_algorithm(sources, UR, theta)
+    T_output, _ = optimize_selection(T_output, UR)
 
     # Compute final coverage
     final_cov, _ = compute_overall_coverage(T_output, UR)
+    final_pen, _ = compute_overall_penalty(T_output, UR)
 
     # Display results
     print(f"Final Coverage: {final_cov:.4f}")
+    print(f"Final Penalty: {final_pen:.4f}")
     print(f"Final Table:\n{T_output}\n")
 
 if __name__ == "__main__":

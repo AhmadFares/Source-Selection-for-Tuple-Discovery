@@ -134,7 +134,7 @@ def penalty_optimization(T, input_table, UR, i, theta):
             if sub_cov >= theta and sub_penalty < curr_penalty:
                 T = T_sub.copy()  # Update T only if a better replacement is found
                 curr_penalty = sub_penalty
-                print("Updated curr_penalty:", curr_penalty)
+                
 
                 if curr_penalty == 0:
                     return T, count  # Stop early if penalty reaches zero

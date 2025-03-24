@@ -44,7 +44,7 @@ class TestCases:
         "Keyword2": ["spine mri", "spondylodiscitis pott", "severe undernutrition", "pain spinal"]
     },
     3: {
-        "Keyword1": ["venous approaches", "sacroiliac tests", "pre eclampsia", "mri lumbar", "tumour stomach", "splenomegaly enlarged", "preventive cerclage"],
+        "Keyword1": ["venous approaches", "sacroiliac tests", "pre eclampsia", "mri lumbar", "tumour stomach", "splenomegaly enlarged", "preventive cerclage", "rachis cervical"],
         "Keyword2": ["hyperplasia parathyroid", "oedematous syndrome", "schizophrenia following"]
     },
     4: {

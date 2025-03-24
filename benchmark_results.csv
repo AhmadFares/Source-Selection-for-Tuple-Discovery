@@ -1,0 +1,29 @@
+Case,Coverage,Penalty,Sources Investigated
+Case 1 - No Split,1.0,0.4375,1
+Case 1 - Split by Rows,1.0,0.4375,1
+Case 1 - Split by Diagonal,1.0,0.4375,2
+Case 1 - Split by Overlapping Rows,1.0,0.4375,1
+Case 2 - No Split,1.0,0.4167,1
+Case 2 - Split by Rows,1.0,0.4167,2
+Case 2 - Split by Diagonal,1.0,0.4167,1
+Case 2 - Split by Overlapping Rows,1.0,0.4167,1
+Case 3 - No Split,1.0,0.5,1
+Case 3 - Split by Rows,1.0,0.5,2
+Case 3 - Split by Diagonal,1.0,0.5,2
+Case 3 - Split by Overlapping Rows,1.0,0.5,2
+Case 4 - No Split,0.0,0.0,1
+Case 4 - Split by Rows,0.0,0.0,3
+Case 4 - Split by Diagonal,0.0,0.0,3
+Case 4 - Split by Overlapping Rows,0.0,0.0,3
+Case 5 - No Split,0.6667,0.5,1
+Case 5 - Split by Rows,0.6667,0.5,3
+Case 5 - Split by Diagonal,0.6667,0.5,3
+Case 5 - Split by Overlapping Rows,0.6667,0.5,3
+Case 6 - No Split,1.0,0.0,1
+Case 6 - Split by Rows,1.0,0.5,1
+Case 6 - Split by Diagonal,1.0,0.0,1
+Case 6 - Split by Overlapping Rows,1.0,0.5,1
+Case 7 - No Split,1.0,0.0,1
+Case 7 - Split by Rows,1.0,0.0,2
+Case 7 - Split by Diagonal,1.0,0.0,1
+Case 7 - Split by Overlapping Rows,1.0,0.0,1
