@@ -1,13 +1,13 @@
 import pandas as pd
 import time
-from Coverage_Guided_Row_Selection import (
+from Single_Source.Coverage_Guided_Row_Selection import (
     coverage_guided_row_selection,
     compute_overall_coverage,
     compute_overall_penalty,
     penalty_optimization,
     optimize_selection,
 )
-from test_cases import TestCases
+from helpers.test_cases import TestCases
 
 
 class BenchmarkTestCases:

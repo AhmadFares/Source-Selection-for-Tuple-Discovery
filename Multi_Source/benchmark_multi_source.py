@@ -1,8 +1,8 @@
 import pandas as pd
-from test_cases import TestCases
-from Coverage_Guided_Row_Selection import algo_main, compute_overall_coverage, compute_overall_penalty, optimize_selection
-from Multi_Source import multi_source_algorithm 
-from T_splitter_into_M import split_by_rows, split_by_diagonal, split_by_overlapping_rows 
+from helpers.test_cases import TestCases
+from Single_Source.Coverage_Guided_Row_Selection import algo_main, compute_overall_coverage, compute_overall_penalty, optimize_selection
+from Multi_Source.Multi_Source import multi_source_algorithm 
+from helpers.T_splitter_into_M import split_by_rows, split_by_diagonal, split_by_overlapping_rows 
 
 def run_case(label, T_input, UR, use_split=False, splitter_fn=None):
     """Run a benchmark test and return coverage, penalty, and number of sources"""

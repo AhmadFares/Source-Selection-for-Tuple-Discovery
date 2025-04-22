@@ -1,7 +1,7 @@
 import pandas as pd
-from Coverage_Guided_Row_Selection import algo_main, compute_overall_coverage, compute_overall_penalty, optimize_selection
-from T_splitter_into_M import split_by_columns, split_by_diagonal, split_by_hybrid, split_by_keywords, split_by_overlapping_rows, split_by_rows
-from test_cases import TestCases
+from Single_Source.Coverage_Guided_Row_Selection import algo_main, compute_overall_coverage, compute_overall_penalty, optimize_selection
+from helpers.T_splitter_into_M import split_by_columns, split_by_diagonal, split_by_hybrid, split_by_keywords, split_by_overlapping_rows, split_by_rows
+from helpers.test_cases import TestCases
 
 def get_next_M(sources, i):
     """ Get the next source M_i from the set of sources M.

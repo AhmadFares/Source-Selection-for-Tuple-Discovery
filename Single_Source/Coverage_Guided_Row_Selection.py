@@ -2,7 +2,7 @@ import sys
 import pandas as pd
 import time
 import numpy as np
-from test_cases import TestCases
+from helpers.test_cases import TestCases
 
 def compute_attr_coverage(T, UR, col):
     """

@@ -18,7 +18,7 @@ class TestCases:
         """
         Load the Lisa_Sheets table from the SQLite database and store it as T.
         """
-        db_path = "Lisa_Tabular_Data.db"  # Database path
+        db_path = "data/Lisa_Tabular_Data.db"  # Database path
         conn = sqlite3.connect(db_path)
         query = "SELECT * FROM Lisa_Sheets;"
         T = pd.read_sql_query(query, conn)

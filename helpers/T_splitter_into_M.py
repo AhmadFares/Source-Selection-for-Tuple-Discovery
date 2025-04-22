@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 def split_by_rows(df):
@@ -127,3 +128,21 @@ def split_by_overlapping_rows(df, overlap_size=5):
     M2 = df.iloc[overlap_size:].reset_index(drop=True)
 
     return [M1, M2]
+
+def split_uniform_by_rows(df, n_sources):
+    """
+    Splits a DataFrame into `n_sources` equally sized row-based sources with the same schema.
+    Each source has the same columns.
+
+    Args:
+        df (pd.DataFrame): The full input table.
+        n_sources (int): Number of sources to split into.
+
+    Returns:
+        List[pd.DataFrame]: A list of DataFrames (sources).
+    """
+    if "Identifiant" not in df.columns:
+        raise ValueError("The table must contain an 'Identifiant' column.")
+
+    df_shuffled = df.sample(frac=1).reset_index(drop=True)
+    return np.array_split(df_shuffled, n_sources)
