@@ -1,5 +1,8 @@
 import pandas as pd
+
 from Single_Source.Coverage_Guided_Row_Selection import algo_main, compute_overall_coverage, compute_overall_penalty, optimize_selection
+from helpers.Source_Constructors import SourceConstructor
+from helpers.Source_Constructors import dataframe_to_ur_dict
 from helpers.T_splitter_into_M import split_by_columns, split_by_diagonal, split_by_hybrid, split_by_keywords, split_by_overlapping_rows, split_by_rows
 from helpers.test_cases import TestCases
 
@@ -32,7 +35,7 @@ def multi_source_algorithm(sources, UR, theta):
         common_cols = [col for col in UR.columns if col in M_i.columns and col != "Identifiant"]
         
         if not common_cols:
-            print(f"Skipping M_{i} as it has no common columns with UR.")
+            #print(f"Skipping M_{i} as it has no common columns with UR.")
             i += 1
             terminate=False
             continue
@@ -42,7 +45,10 @@ def multi_source_algorithm(sources, UR, theta):
         
         if T.empty:
             T = new_T
+        elif new_T.empty:
+            print(f"Skipping M_{i} as it produced an empty table.")
         else:
+            print(f"Columns in new_T: {new_T.columns.tolist()}")
             T = T.set_index("Identifiant").combine_first(new_T.set_index("Identifiant")).reset_index()
         
         # Compute current coverage
@@ -65,13 +71,25 @@ def main():
     """ Main function to split T and run the multi-source algorithm. """
     # Load the test case
     test_cases = TestCases()
-    T_input, UR = test_cases.get_case(6)  # Load predefined test case 1
-
+    T_input, UR = test_cases.get_case(20)  # Load predefined test case 1
+    #UR = dataframe_to_ur_dict(UR)
     theta = 1  # Example coverage threshold
+    constructor = SourceConstructor(T_input, UR)
+    #sources = constructor.low_coverage_sources()
+    #sources = constructor.group_by_sources()
+    #sources = constructor.low_penalty_sources()
+    sources = constructor.high_penalty_sources()
+    
+    #print(f"✅ Created {len(sources)} high-penalty sources.")
+
+    # print(f"Generated {len(sources)} sources")
+    # for i, src in enumerate(sources[:5]):
+    #     print(f"Source {i} (first few rows):")
+    #     print(src.head())
 
     # --- Choose one split method ---
     #Same schema:
-    sources = split_by_diagonal(T_input) 
+    #sources = split_by_diagonal(T_input) 
     #sources = split_by_rows(T_input) 
     #sources = split_by_overlapping_rows(T_input, overlap_size=5) 
 

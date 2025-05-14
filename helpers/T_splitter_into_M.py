@@ -144,5 +144,7 @@ def split_uniform_by_rows(df, n_sources):
     if "Identifiant" not in df.columns:
         raise ValueError("The table must contain an 'Identifiant' column.")
 
-    df_shuffled = df.sample(frac=1).reset_index(drop=True)
-    return np.array_split(df_shuffled, n_sources)
+    # df_shuffled = df.sample(frac=1).reset_index(drop=True)
+    # return np.array_split(df_shuffled, n_sources)
+    # No shuffling
+    return np.array_split(df.reset_index(drop=True), n_sources)

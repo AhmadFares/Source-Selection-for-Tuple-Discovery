@@ -169,6 +169,10 @@ def algo_main(input_table, UR, theta):
     T, i = coverage_guided_row_selection(input_table, UR, theta)
     T, count = penalty_optimization(T, input_table, UR, i, theta)
     T, optcount = optimize_selection(T, UR)
+    print(f"[algo_main] Returned {len(T)} rows.")
+    print(f"[algo_main] Coverage: {compute_overall_coverage(T, UR)[0]}")
+    print(f"[algo_main] Penalty: {compute_overall_penalty(T, UR)[0]}")
+
     return T
 
 # --- Execution ---

@@ -1,5 +1,6 @@
 import pandas as pd
 import sqlite3
+import numpy as np
 
 
 class TestCases:
@@ -13,6 +14,7 @@ class TestCases:
     def __init__(self):
         self.cases = {}  # Dictionary to store test cases
         self.load_lisa_sheets()
+        self.load_fixed_mathe_case()  # Load MATHE case
 
     def load_lisa_sheets(self):
         """
@@ -104,6 +106,54 @@ class TestCases:
             "B": ["v3", "v4"]
         })
         return T11, UR11
+    def build_random_ur(df, columns, k):
+        ur = {}
+        for col in columns:
+            unique_vals = df[col].dropna().unique()
+            if len(unique_vals) > 0:
+                selected = np.random.choice(unique_vals, size=min(k, len(unique_vals)), replace=False)
+                ur[col] = list(selected)
+        return ur
+        
+    def load_mathe_case(self, csv_path="./data/MATHE/output_table.csv", n_values_per_col=4):
+        """
+        Load MATHE and generate a random UR from the last 3 columns (for ad-hoc testing).
+        """
+        mathe_df = pd.read_csv(csv_path, delimiter=";")
+        mathe_df.rename(columns={"id_assessment": "Identifiant"}, inplace=True)
+
+        ur_columns = mathe_df.columns[-3:]
+        ur_dict = self.build_random_ur(mathe_df, ur_columns, n_values_per_col)
+        UR = self.create_flexible_dataframe(ur_dict)
+
+        base_cols = list(ur_columns) + ["Identifiant"]
+        T = mathe_df[base_cols].copy()
+
+        self.cases[19] = (T, UR)
+
+    def load_fixed_mathe_case(self, csv_path="./data/MATHE/output_table.csv"):
+        """
+        Load MATHE and use a fixed User Request (UR) across 3 columns.
+        """
+        mathe_df = pd.read_csv(csv_path, delimiter=";")
+        mathe_df.rename(columns={"id_assessment": "Identifiant"}, inplace=True)
+
+        fixed_ur_data = {
+            "keyword_name": ["Two variables", "Orthogonality", "Three points rule", "Mean"],
+            "topic_name": ["Linear Algebra", "Probability", "Optimization", "Discrete Mathematics"],
+            "subtopic_name": [
+                "Linear Transformations",
+                "Vector Spaces",
+                "Algebraic expressions, Equations, and Inequalities",
+                "Triple Integration"
+            ]
+        }
+
+        UR = self.create_flexible_dataframe(fixed_ur_data)
+        base_cols = list(fixed_ur_data.keys()) + ["Identifiant"]
+        T = mathe_df[base_cols].copy()
+
+        self.cases[20] = (T, UR)
 
     def get_case(self, case_number=1):
         """
