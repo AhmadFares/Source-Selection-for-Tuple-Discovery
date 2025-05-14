@@ -23,25 +23,20 @@ class MetricLoggerCallback(BaseCallback):
         self.coverages = []
         self.penalties = []
         self.steps = []
-        self.stopped = []  
+        self.stopped = []
 
     def _on_step(self) -> bool:
         if self.locals.get('dones') is not None:
             for idx, done in enumerate(self.locals['dones']):
                 if done:
                     self.rewards.append(self.locals['rewards'][idx])
-                    env = self.training_env.envs[idx]
-                    real_env = env.env
+                    info = self.locals['infos'][idx]
 
-                    self.coverages.append(real_env.last_coverage)
-                    self.penalties.append(real_env.last_penalty)
-                    self.steps.append(real_env.steps_taken)
-                    self.stopped.append(
-                        self.locals['infos'][idx].get("stop", False)
-                    )  
-
+                    self.coverages.append(info.get("coverage", 0.0))
+                    self.penalties.append(info.get("penalty", 0.0))
+                    self.steps.append(info.get("steps", 0))  # if you add this below
+                    self.stopped.append(info.get("stop", False))
         return True
-
 
 def dataframe_to_ur_dict(df):
     return {

@@ -66,6 +66,7 @@ class DataSelectionEnv(gym.Env):
                 "stop": True,
                 "coverage": self.current_coverage,
                 "penalty": self.current_penalty,
+                "steps": self.steps_taken,
                 "selected_sources": list(self.selected_sources)
             }
             return self.get_state(), reward, done, info
@@ -118,6 +119,7 @@ class DataSelectionEnv(gym.Env):
             "stop": False,
             "coverage": self.current_coverage,
             "penalty": self.current_penalty,
+            "steps": self.steps_taken,
             "selected_sources": list(self.selected_sources)
         }
         return next_state, reward, done, info
