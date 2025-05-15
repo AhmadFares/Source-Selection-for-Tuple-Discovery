@@ -114,7 +114,7 @@ plt.savefig("reward_curve.png")
 
 # Plot Coverage curve
 plt.figure(figsize=(8,5))
-plt.plot(metric_logger.coverages)
+plt.plot(moving_avg(metric_logger.coverages))
 plt.title("Coverage over Episodes")
 plt.xlabel("Episode")
 plt.ylabel("Coverage")
@@ -123,7 +123,7 @@ plt.savefig("cov_curve.png")
 
 # Plot Penalty curve
 plt.figure(figsize=(8,5))
-plt.plot(metric_logger.penalties)
+plt.plot(moving_avg(metric_logger.penalties))
 plt.title("Penalty over Episodes")
 plt.xlabel("Episode")
 plt.ylabel("Penalty")
@@ -138,15 +138,6 @@ plt.xlabel("Episode")
 plt.ylabel("Steps")
 plt.grid()
 plt.savefig("steps_curve.png")
-
-# Plot STOP action usage
-plt.figure(figsize=(8,5))
-plt.plot(metric_logger.stopped)
-plt.title("STOP Action Used")
-plt.xlabel("Episode")
-plt.ylabel("STOP Used (1=True, 0=False)")
-plt.grid()
-plt.savefig("stop_curve.png")
 
 # Save the trained model
 model.save("dqn_data_selection")
