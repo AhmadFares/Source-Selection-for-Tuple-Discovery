@@ -50,17 +50,16 @@ class DataSelectionEnv(gym.Env):
 
     def step(self, action):
         action = int(np.asarray(action).item())
-
+        
         if action == self.stop_action:
             done = True
-            if len(self.selected_sources) == 0:
-                reward = -self.beta - self.gamma
-                
+            if len(self.selected_sources) == 0:  # Agent chooses STOP as first action
+                reward = float('-inf')  # High penalty for stopping without any selection
             else:
                 reward = self.compute_reward(self.current_coverage, self.current_penalty)
-                self.last_coverage = self.current_coverage
-                self.last_penalty = self.current_penalty
-                self.last_steps = self.steps_taken
+                # ✅ Give bonus for stopping with full coverage
+                if self.current_coverage >= 1.0:
+                    reward += 1.0 
 
             info = {
                 "stop": True,
@@ -71,44 +70,49 @@ class DataSelectionEnv(gym.Env):
             }
             return self.get_state(), reward, done, info
 
-        source_idx = action
-        if source_idx in self.selected_sources:
-            reward = -self.beta - self.gamma
+        
+        if action in self.selected_sources: #  Agent chooses a source it already selected
+            reward = float('-inf')  # punish invalid repeat
             done = False
-            info = {"error": f"Source {source_idx} already selected."}
+            self.steps_taken += 1
+            info = {
+                "stop": False,
+                "coverage": self.current_coverage,
+                "penalty": self.current_penalty,
+                "steps": self.steps_taken,
+                "error": f"Source {action} already selected."
+            }
             return self.get_state(), reward, done, info
 
-        selected_source = self.sources_list[source_idx]
-        self.selected_sources.add(source_idx)
+        #  Valid source selection
+        self.selected_sources.add(action)
         self.steps_taken += 1
 
+        selected_source = self.sources_list[action]
         new_T = algo_main(selected_source, self.UR, 1)
-        
+
         if self.current_table.empty:
             self.current_table = new_T
-        else:
-            if not new_T.empty:
-                self.current_table = (
-                    self.current_table.set_index("Identifiant")
-                    .combine_first(new_T.set_index("Identifiant"))
-                    .reset_index()
-                )
-                optimized_table, _ = optimize_selection(self.current_table, self.UR)
-                self.current_table = optimized_table
-                print(f"Added {len(new_T)} rows from source {source_idx}.")
-                print(f"Current table size: {len(self.current_table)} rows.")
-                print(f"UR {self.UR}")
-            else:
-                print("Warning: new_T is empty. No rows to add.")
+        elif not new_T.empty:
+            self.current_table = (
+                self.current_table.set_index("Identifiant")
+                .combine_first(new_T.set_index("Identifiant"))
+                .reset_index()
+            )
+            optimized_table, _ = optimize_selection(self.current_table, self.UR)
+            self.current_table = optimized_table
+            print(f"Added {len(new_T)} rows from source {action}.")
+            print(f"Current table size: {len(self.current_table)} rows.")
 
         new_coverage, _ = compute_overall_coverage(self.current_table, self.UR)
         new_penalty, _ = compute_overall_penalty(self.current_table, self.UR)
 
         reward = self.compute_reward(new_coverage, new_penalty)
         print("CURRENT REWARD", reward)
+
+        # update state tracking
         self.current_coverage = new_coverage
         self.current_penalty = new_penalty
-
         self.last_coverage = new_coverage
         self.last_penalty = new_penalty
         self.last_steps = self.steps_taken
@@ -128,17 +132,13 @@ class DataSelectionEnv(gym.Env):
 
     def compute_reward(self, new_coverage, new_penalty):
         normalized_steps = self.steps_taken / self.max_steps if self.max_steps > 0 else 0.0
-        delta_coverage = new_coverage - self.last_coverage
-        delta_penalty = self.last_penalty - new_penalty
-        reward= (
-            self.alpha * delta_coverage +
-            self.beta * delta_penalty -
+        reward = (
+            self.alpha * new_coverage -
+            self.beta * new_penalty -
             self.gamma * normalized_steps
         )
-        if delta_coverage == 0 and delta_penalty == 0:
-            reward -= 0.01
-
         return reward
+
 
     def get_state(self):
         state = []
@@ -157,5 +157,5 @@ class DataSelectionEnv(gym.Env):
         return np.array(state, dtype=np.float32)
 
 
-    def get_available_actions(self):
-        return [i for i in range(len(self.sources_list)) if i not in self.selected_sources]
+    # def get_available_actions(self):
+    #     return [i for i in range(len(self.sources_list)) if i not in self.selected_sources]
