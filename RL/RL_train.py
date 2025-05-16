@@ -85,7 +85,7 @@ obs = env.reset()
 metric_logger = MetricLoggerCallback()
 
 # Train the model
-model.learn(total_timesteps=1300, callback=metric_logger)
+model.learn(total_timesteps=1000, callback=metric_logger)
 
 #  Save the metrics immediately after training
 import numpy as np
