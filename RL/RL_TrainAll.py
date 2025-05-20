@@ -1,7 +1,8 @@
-
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
 
 from stable_baselines3 import DQN
 from stable_baselines3.common.callbacks import BaseCallback
@@ -36,9 +37,20 @@ class MetricLoggerCallback(BaseCallback):
 def dataframe_to_ur_dict(df):
     return {col: set(df[col].dropna().unique()) for col in df.columns}
 
-def moving_avg(data, window_size=10):
-    return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
+def moving_avg(data, window_size=50):
+    return pd.Series(data).rolling(window=window_size, min_periods=1).mean().to_numpy()
 
+def plot_and_save_sns(metric, name, save_path):
+    sns.set(style="whitegrid")
+    plt.figure(figsize=(12, 6))
+    smooth_metric = moving_avg(metric)
+    sns.lineplot(data=smooth_metric)
+    plt.title(f"{name} over Episodes")
+    plt.xlabel("Episode")
+    plt.ylabel(name)
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_path, f"{name.lower()}_curve.png"))
+    plt.close()
 
 def train_model(T, UR, sources, alpha, beta, gamma, save_path):
     value_index, source_stats = compute_UR_value_frequencies_in_sources(sources, UR)
@@ -56,40 +68,45 @@ def train_model(T, UR, sources, alpha, beta, gamma, save_path):
              steps=callback.steps,
              stopped=callback.stopped)
 
-    def plot_and_save(metric, name):
-        plt.figure()
-        plt.plot(moving_avg(metric))
-        plt.title(name)
-        plt.xlabel("Episode")
-        plt.ylabel(name)
-        plt.grid()
-        plt.tight_layout()
-        plt.savefig(os.path.join(save_path, f"{name.lower()}_curve.png"))
-        plt.close()
-
-    plot_and_save(callback.rewards, "Reward")
-    plot_and_save(callback.coverages, "Coverage")
-    plot_and_save(callback.penalties, "Penalty")
-    plot_and_save(callback.steps, "Steps")
-    plot_and_save(callback.stopped, "STOP Action Used")
+    plot_and_save_sns(callback.rewards, "Reward", save_path)
+    plot_and_save_sns(callback.coverages, "Coverage", save_path)
+    plot_and_save_sns(callback.penalties, "Penalty", save_path)
+    plot_and_save_sns(callback.steps, "Steps", save_path)
+    plot_and_save_sns(callback.stopped, "STOP Action Used", save_path)
 
     model.save(os.path.join(save_path, "dqn_model"))
 
+    # Return metrics to aggregate outside
+    return {
+        "rewards": callback.rewards,
+        "coverages": callback.coverages,
+        "penalties": callback.penalties,
+        "steps": callback.steps,
+        "stopped": callback.stopped
+    }
+
 def run_all():
     test_cases = TestCases()
-    ur_cases = [20]
+    ur_cases = [20]  # Reduced for example, add more if needed
     source_variants = {
         "low_penalty": lambda ctor: ctor.low_penalty_sources(),
         "high_penalty": lambda ctor: ctor.high_penalty_sources(),
         "low_coverage": lambda ctor: ctor.low_coverage_sources(),
-        "group_by_attr": lambda ctor: ctor.group_by_attr_sources()
+        "group_by_attr": lambda ctor: ctor.group_by_sources()
     }
     alpha_values = [0.5]
     beta_values = [0.3]
 
+    all_metrics = {
+        "rewards": {},
+        "coverages": {},
+        "penalties": {},
+        "steps": {},
+        "stopped": {}
+    }
+
     for case_id in ur_cases:
         T, UR = test_cases.get_case(case_id)
-       # UR_dict = dataframe_to_ur_dict(UR)
         constructor = SourceConstructor(T, UR)
 
         for variant_name, variant_fn in source_variants.items():
@@ -102,7 +119,16 @@ def run_all():
                         continue
                     save_dir = f"results/case_{case_id}/{variant_name}/alpha_{alpha}_beta_{beta}"
                     print(f"Training: Case={case_id}, Source={variant_name}, Alpha={alpha}, Beta={beta}, Gamma={gamma}")
-                    train_model(T, UR, sources, alpha, beta, gamma, save_dir)
+
+                    metrics = train_model(T, UR, sources, alpha, beta, gamma, save_dir)
+
+                    key = f"case{case_id}_{variant_name}_a{alpha}_b{beta}"
+                    for metric_name in all_metrics.keys():
+                        all_metrics[metric_name][key] = metrics[metric_name]
+
+    # Save all collected metrics from all runs
+    np.savez("all_training_metrics.npz", **all_metrics)
+    print("All training metrics saved to all_training_metrics.npz")
 
 if __name__ == "__main__":
     run_all()
