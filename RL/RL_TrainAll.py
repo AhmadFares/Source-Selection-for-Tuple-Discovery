@@ -36,12 +36,16 @@ class MetricLoggerCallback(BaseCallback):
 def dataframe_to_ur_dict(df):
     return {col: set(df[col].dropna().unique()) for col in df.columns}
 
+def moving_avg(data, window_size=10):
+    return np.convolve(data, np.ones(window_size)/window_size, mode='valid')
+
+
 def train_model(T, UR, sources, alpha, beta, gamma, save_path):
     value_index, source_stats = compute_UR_value_frequencies_in_sources(sources, UR)
     env = DataSelectionEnv(sources, UR, source_stats, value_index, alpha, beta, gamma)
     model = DQN("MlpPolicy", env, verbose=0, buffer_size=10000)
     callback = MetricLoggerCallback()
-    model.learn(total_timesteps=1000, callback=callback)
+    model.learn(total_timesteps=2000, callback=callback)
 
     os.makedirs(save_path, exist_ok=True)
 
@@ -54,11 +58,12 @@ def train_model(T, UR, sources, alpha, beta, gamma, save_path):
 
     def plot_and_save(metric, name):
         plt.figure()
-        plt.plot(metric)
+        plt.plot(moving_avg(metric))
         plt.title(name)
         plt.xlabel("Episode")
         plt.ylabel(name)
         plt.grid()
+        plt.tight_layout()
         plt.savefig(os.path.join(save_path, f"{name.lower()}_curve.png"))
         plt.close()
 
@@ -72,15 +77,15 @@ def train_model(T, UR, sources, alpha, beta, gamma, save_path):
 
 def run_all():
     test_cases = TestCases()
-    ur_cases = [20, 21, 22]
+    ur_cases = [20]
     source_variants = {
         "low_penalty": lambda ctor: ctor.low_penalty_sources(),
         "high_penalty": lambda ctor: ctor.high_penalty_sources(),
         "low_coverage": lambda ctor: ctor.low_coverage_sources(),
         "group_by_attr": lambda ctor: ctor.group_by_attr_sources()
     }
-    alpha_values = [0.3, 0.5, 0.7]
-    beta_values = [0.2, 0.4, 0.6]
+    alpha_values = [0.5]
+    beta_values = [0.3]
 
     for case_id in ur_cases:
         T, UR = test_cases.get_case(case_id)
