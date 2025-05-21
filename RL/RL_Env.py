@@ -54,12 +54,12 @@ class DataSelectionEnv(gym.Env):
         if action == self.stop_action:
             done = True
             if len(self.selected_sources) == 0:  # Agent chooses STOP as first action
-                reward = float('-inf')  # High penalty for stopping without any selection
+                reward = -10  # High penalty for stopping without any selection
             else:
                 reward = self.compute_reward(self.current_coverage, self.current_penalty)
-                # ✅ Give bonus for stopping with full coverage
+                #  Give bonus for stopping with full coverage
                 if self.current_coverage >= 1.0:
-                    reward += 1.0 
+                    reward += 50
 
             info = {
                 "stop": True,
@@ -72,8 +72,8 @@ class DataSelectionEnv(gym.Env):
 
         
         if action in self.selected_sources: #  Agent chooses a source it already selected
-            reward = float('-inf')  # punish invalid repeat
-            done = False
+            reward = -10  # punish invalid repeat
+            done = True
             self.steps_taken += 1
             info = {
                 "stop": False,
@@ -137,7 +137,7 @@ class DataSelectionEnv(gym.Env):
             self.beta * new_penalty -
             self.gamma * normalized_steps
         )
-        return reward
+        return 10*reward
 
 
     def get_state(self):

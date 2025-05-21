@@ -57,7 +57,14 @@ def plot_and_save_sns(metric, name, save_path):
 def train_model(T, UR, sources, alpha, beta, gamma, save_path):
     value_index, source_stats = compute_UR_value_frequencies_in_sources(sources, UR)
     env = DataSelectionEnv(sources, UR, source_stats, value_index, alpha, beta, gamma)
-    model = DQN("MlpPolicy", env, verbose=0, buffer_size=10000)
+    model = DQN(
+    "MlpPolicy", env, 
+    verbose=0, 
+    buffer_size=10000,
+    exploration_fraction=0.4,  
+    exploration_initial_eps=1.0,
+    exploration_final_eps=0.05,
+)
     callback = MetricLoggerCallback()
     model.learn(total_timesteps=2000, callback=callback)
 
