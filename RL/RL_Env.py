@@ -72,15 +72,15 @@ class DataSelectionEnv(gym.Env):
 
         
         if action in self.selected_sources: #  Agent chooses a source it already selected
-            reward = -10  # punish invalid repeat
-            done = True
+            reward = 0 #punish invalid repeat
+            done = False
             self.steps_taken += 1
             info = {
                 "stop": False,
                 "coverage": self.current_coverage,
                 "penalty": self.current_penalty,
                 "steps": self.steps_taken,
-                "error": f"Source {action} already selected."
+                "warning": f"Source {action} already selected."
             }
             return self.get_state(), reward, done, info
 
@@ -138,6 +138,17 @@ class DataSelectionEnv(gym.Env):
             self.gamma * normalized_steps
         )
         return 10*reward
+# def compute_delta_reward(self, new_coverage, new_penalty):
+#     delta_coverage = new_coverage - self.last_coverage
+#     delta_penalty = new_penalty - self.last_penalty
+#     delta_steps = self.steps_taken - self.last_steps
+
+#     reward = (
+#         self.alpha * delta_coverage
+#         - self.beta * delta_penalty
+#         - self.gamma * delta_steps
+#     )
+#     return reward
 
 
     def get_state(self):

@@ -63,10 +63,10 @@ def train_model(T, UR, sources, alpha, beta, gamma, save_path):
     buffer_size=10000,
     exploration_fraction=0.4,  
     exploration_initial_eps=1.0,
-    exploration_final_eps=0.05,
+    exploration_final_eps=0.05, 
 )
     callback = MetricLoggerCallback()
-    model.learn(total_timesteps=2000, callback=callback)
+    model.learn(total_timesteps=20000, callback=callback)
 
     os.makedirs(save_path, exist_ok=True)
 
@@ -123,10 +123,10 @@ def run_all():
 
             for alpha in alpha_values:
                 for beta in beta_values:
-                    gamma = 1.0 - alpha - beta
+                    gamma = 1.0 
                     if gamma < 0:
                         continue
-                    save_dir = f"results/case_{case_id}/{variant_name}/alpha_{alpha}_beta_{beta}"
+                    save_dir = f"results_ignore1/case_{case_id}/{variant_name}/alpha_{alpha}_beta_{beta}"
                     print(f"Training: Case={case_id}, Source={variant_name}, Alpha={alpha}, Beta={beta}, Gamma={gamma}")
 
                     metrics = train_model(T, UR, sources, alpha, beta, gamma, save_dir)
@@ -136,7 +136,7 @@ def run_all():
                         all_metrics[metric_name][key] = metrics[metric_name]
 
     # Save all collected metrics from all runs
-    np.savez("all_training_metrics.npz", **all_metrics)
+    np.savez("all_training_metrics_ignore1.npz", **all_metrics)
     print("All training metrics saved to all_training_metrics.npz")
 
 if __name__ == "__main__":
