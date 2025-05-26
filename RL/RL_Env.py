@@ -59,8 +59,8 @@ class DataSelectionEnv(gym.Env):
                 reward = self.compute_reward(self.current_coverage, self.current_penalty)
                 #  Give bonus for stopping with full coverage
                 if self.current_coverage >= 1.0:
-                    reward += 50
-
+                    reward += 50 
+                    
             info = {
                 "stop": True,
                 "coverage": self.current_coverage,
@@ -72,7 +72,7 @@ class DataSelectionEnv(gym.Env):
 
         
         if action in self.selected_sources: #  Agent chooses a source it already selected
-            reward = 0 #punish invalid repeat
+            reward = 0  # punish invalid repeat
             done = False
             self.steps_taken += 1
             info = {
@@ -80,7 +80,7 @@ class DataSelectionEnv(gym.Env):
                 "coverage": self.current_coverage,
                 "penalty": self.current_penalty,
                 "steps": self.steps_taken,
-                "warning": f"Source {action} already selected."
+                "error": f"Source {action} already selected."
             }
             return self.get_state(), reward, done, info
 
@@ -90,7 +90,6 @@ class DataSelectionEnv(gym.Env):
 
         selected_source = self.sources_list[action]
         new_T = algo_main(selected_source, self.UR, 1)
-
         if self.current_table.empty:
             self.current_table = new_T
         elif not new_T.empty:
@@ -129,7 +128,6 @@ class DataSelectionEnv(gym.Env):
         return next_state, reward, done, info
 
 
-
     def compute_reward(self, new_coverage, new_penalty):
         normalized_steps = self.steps_taken / self.max_steps if self.max_steps > 0 else 0.0
         reward = (
@@ -137,7 +135,7 @@ class DataSelectionEnv(gym.Env):
             self.beta * new_penalty -
             self.gamma * normalized_steps
         )
-        return 10*reward
+        return 10 * reward
 # def compute_delta_reward(self, new_coverage, new_penalty):
 #     delta_coverage = new_coverage - self.last_coverage
 #     delta_penalty = new_penalty - self.last_penalty
@@ -149,7 +147,6 @@ class DataSelectionEnv(gym.Env):
 #         - self.gamma * delta_steps
 #     )
 #     return reward
-
 
     def get_state(self):
         state = []

@@ -9,7 +9,7 @@ def moving_average(x, w):
     return np.convolve(x, np.ones(w), 'valid') / w
 
 # Load your data (adjust filename if needed)
-data = np.load('all_training_metrics_ignore.npz', allow_pickle=True)
+data = np.load('all_training_metrics_INGORE.npz', allow_pickle=True)
 rewards_dict    = data['rewards'].item()
 coverages_dict  = data['coverages'].item()
 penalties_dict  = data['penalties'].item()
@@ -27,6 +27,8 @@ sns.set(style="whitegrid", font_scale=1.15)
 def plot_metric(metric_dict, title, ylabel, filename, is_binary=False):
     plt.figure(figsize=(11, 6))
     for variant in variants:
+        # if variant == "case20_low_penalty_a0.6_b0.3" or variant == "case20_group_by_attr_a0.6_b0.3":
+        #      continue
         values = np.array(metric_dict[variant])
         # Smooth binary metrics differently (e.g. STOP used)
         if is_binary:
