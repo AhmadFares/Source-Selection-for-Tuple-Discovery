@@ -106,7 +106,7 @@ class TestCases:
             "B": ["v3", "v4"]
         })
         return T11, UR11
-    def build_random_ur(df, columns, k):
+    def build_random_ur(self, df, columns, k):
         ur = {}
         for col in columns:
             unique_vals = df[col].dropna().unique()
@@ -155,12 +155,12 @@ class TestCases:
 
         self.cases[20] = (T, UR)
 
-    def get_case(self, case_number=1):
+    def get_case(self, case_number=20):
         """
         Return the tuple (T, UR) for the specified case number.
         Defaults to case 1 if the given case is not found.
         """
-        return self.cases.get(case_number, self.cases[1])
+        return self.cases.get(case_number, self.cases[20])
 
 
 

@@ -9,7 +9,9 @@ def moving_average(x, w):
     return np.convolve(x, np.ones(w), 'valid') / w
 
 # Load your data (adjust filename if needed)
-data = np.load('all_training_metrics_INGORE.npz', allow_pickle=True)
+data = np.load('all_training_metrics_Ignore.npz', allow_pickle=True)
+print(type(data['rewards']))
+print(data['rewards'].shape)
 rewards_dict    = data['rewards'].item()
 coverages_dict  = data['coverages'].item()
 penalties_dict  = data['penalties'].item()

@@ -24,16 +24,18 @@ def multi_source_algorithm(sources, UR, theta):
     T = pd.DataFrame()  # Start with an empty table
     i = 0
     terminate = False
-
+    chosen_order = []  # To keep track of the order of selected sources
     while not terminate:
         terminate = True  
+        
+
         M_i = get_next_M(sources, i)
         if M_i is None:
             print("No more valid sources left.")
-            return T, i + 1    # Stop and return the last obtained table
+            return T, i + 1, chosen_order   # Stop and return the last obtained table
         
         common_cols = [col for col in UR.columns if col in M_i.columns and col != "Identifiant"]
-        
+        chosen_order.append(i+1)
         if not common_cols:
             #print(f"Skipping M_{i} as it has no common columns with UR.")
             i += 1
@@ -63,7 +65,7 @@ def multi_source_algorithm(sources, UR, theta):
             i += 1
             terminate = False  # Continue to the next source
 
-    return T, i + 1    # Return the last obtained table, even if coverage is not met
+    return T, i + 1 , chosen_order  # Return the last obtained table, even if coverage is not met
 
 
 # --- Main Function ---
