@@ -15,6 +15,7 @@ class TestCases:
         self.cases = {}  # Dictionary to store test cases
         self.load_lisa_sheets()
         self.load_fixed_mathe_case()  # Load MATHE case
+        self.load_fixed_mathe_case2() 
 
     def load_lisa_sheets(self):
         """
@@ -154,13 +155,37 @@ class TestCases:
         T = mathe_df[base_cols].copy()
 
         self.cases[20] = (T, UR)
+        
+        
+    def load_fixed_mathe_case2(self, csv_path="./data/MATHE/output_table.csv"):
+        """
+        Load MATHE and use a fixed User Request (UR) across 3 columns.
+        """
+        mathe_df = pd.read_csv(csv_path, delimiter=";")
+        mathe_df.rename(columns={"id_assessment": "Identifiant"}, inplace=True)
 
-    def get_case(self, case_number=20):
+        new_ur_data = {
+            "keyword_name": ["Cauchy problem"],
+            "topic_name": ["Integration", "Discrete Mathematics"],
+            "subtopic_name": ["Recursivity"],
+            "question_id": [80],
+            "id_lect": [2162],
+            "answer1": ["The system has no solution."],
+            "keyword_id": [139]
+        }
+
+        UR = self.create_flexible_dataframe(new_ur_data)
+        base_cols = list(new_ur_data.keys()) + ["Identifiant"]
+        T = mathe_df[base_cols].copy()
+
+        self.cases[21] = (T, UR)
+
+    def get_case(self, case_number=21):
         """
         Return the tuple (T, UR) for the specified case number.
         Defaults to case 1 if the given case is not found.
         """
-        return self.cases.get(case_number, self.cases[20])
+        return self.cases.get(case_number, self.cases[21])
 
 
 

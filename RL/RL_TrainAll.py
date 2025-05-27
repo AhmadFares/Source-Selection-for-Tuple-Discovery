@@ -117,7 +117,7 @@ def train_model(T, UR, sources, alpha, beta, gamma, save_path):
 
 def run_all():
     test_cases = TestCases()
-    ur_cases = [20]  # Reduced for example, add more if needed
+    ur_cases = [21]  # Reduced for example, add more if needed
     source_variants = {
         "low_penalty": lambda ctor: ctor.low_penalty_sources(),
         "high_penalty": lambda ctor: ctor.high_penalty_sources(),
@@ -144,7 +144,7 @@ def run_all():
             for alpha in alpha_values:
                 for beta in beta_values:
                     gamma = 1.0 - alpha - beta
-                    save_dir = f"results_Ignore_30000/case_{case_id}/{variant_name}/alpha_{alpha}_beta_{beta}"
+                    save_dir = f"results_UR2/case_{case_id}/{variant_name}/alpha_{alpha}_beta_{beta}"
                     print(f"Training: Case={case_id}, Source={variant_name}, Alpha={alpha}, Beta={beta}, Gamma={gamma}")
 
                     metrics = train_model(T, UR, sources, alpha, beta, gamma, save_dir)
@@ -154,7 +154,7 @@ def run_all():
                         all_metrics[metric_name][key] = metrics[metric_name]
 
     # Save all collected metrics from all runs
-    np.savez("all_training_metrics_Ignore_30000.npz", **all_metrics)
+    np.savez("all_training_metrics_UR2.npz", **all_metrics)
     print("All training metrics saved to all_training_metrics.npz")
 
 if __name__ == "__main__":

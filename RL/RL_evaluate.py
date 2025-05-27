@@ -2,10 +2,15 @@ from contextlib import contextmanager
 import os
 import time
 import sys
+import pandas as pd
 from stable_baselines3 import DQN
 from Multi_Source.Multi_Source import multi_source_algorithm
 from RL.RL_Env import DataSelectionEnv
-from Single_Source.Coverage_Guided_Row_Selection import compute_overall_coverage, compute_overall_penalty, optimize_selection
+from Single_Source.Coverage_Guided_Row_Selection import (
+    compute_overall_coverage,
+    compute_overall_penalty,
+    optimize_selection,
+)
 from helpers.Source_Constructors import SourceConstructor
 from helpers.test_cases import TestCases
 from helpers.statistics_computation import compute_UR_value_frequencies_in_sources
@@ -23,67 +28,107 @@ def suppress_output():
             sys.stdout = old_stdout
             sys.stderr = old_stderr
 
-# Load test case and split sources
+def evaluate_offline(method, sources_list, UR, theta):
+    start_time = time.time()
+    T_out, _, chosen_order = multi_source_algorithm(sources_list, UR, theta, method=method)
+    T_out, _ = optimize_selection(T_out, UR)
+    elapsed = time.time() - start_time
+    final_cov, _ = compute_overall_coverage(T_out, UR)
+    final_pen, _ = compute_overall_penalty(T_out, UR)
+    return {
+        "coverage": final_cov,
+        "penalty": final_pen,
+        "time": elapsed,
+        "order": chosen_order,
+        "steps": len(chosen_order),
+    }
+
+def evaluate_rl_agent(model_path, sources_list, UR, alpha, beta, gamma):
+    value_index, source_stats = compute_UR_value_frequencies_in_sources(sources_list, UR)
+    env = DataSelectionEnv(
+        sources_list, UR, statistics=source_stats, value_index=value_index,
+        alpha=alpha, beta=beta, gamma=gamma
+    )
+    model = DQN.load(model_path)
+    start_time = time.time()
+    obs = env.reset()
+    done = False
+    chosen_order = []
+    while not done:
+        action, _ = model.predict(obs, deterministic=True)
+        chosen_order.append(action)
+        obs, reward, done, info = env.step(action)
+    elapsed = time.time() - start_time
+    env.current_table = optimize_selection(env.current_table, env.UR)[0]
+    final_cov_rl, _ = compute_overall_coverage(env.current_table, env.UR)
+    final_pen_rl, _ = compute_overall_penalty(env.current_table, env.UR)
+    return {
+        "coverage": final_cov_rl,
+        "penalty": final_pen_rl,
+        "time": elapsed,
+        "order": list(env.selected_sources),
+        "steps": len(env.selected_sources),
+    }
+
+# ===================== MAIN SCRIPT ===========================
+
 test_cases = TestCases()
 test_cases.load_mathe_case()
-T, UR = test_cases.get_case(19)
+T, UR = test_cases.get_case(20)
+constructor = SourceConstructor(T, UR, seed=42)  # Seed for reproducibility!
+sources_list = constructor.high_penalty_sources()
+theta = 1.0
 
-print(UR)
-constructor = SourceConstructor(T, UR)
-sources_list = constructor.low_coverage_sources()  # <-- ensure this is the same for RL/offline
+results = []
 
-value_index, source_stats = compute_UR_value_frequencies_in_sources(sources_list, UR)
-env = DataSelectionEnv(sources_list, UR, statistics=source_stats, value_index=value_index, alpha=0.6, beta=0.3, gamma=0.1)
+# ------- OFFLINE METHODS -------
+offline_methods = [
+    ("coverage_only", "Offline Coverage Only"),
+    ("coverage_penalty", "Offline Coverage+Penalty"),
+    ("algo_main", "Offline Full Algo Main"),
+]
 
-# --- RL Agent Evaluation ---
-model = DQN.load("dqn_model_high_penalty_1")
+for method, label in offline_methods:
+    print(f"\n--- Evaluating {label} ---")
+    res = evaluate_offline(method, sources_list, UR, theta)
+    results.append({
+        "variant": label,
+        "coverage": res["coverage"],
+        "penalty": res["penalty"],
+        "steps": res["steps"],
+        "time": res["time"],
+        "order": res["order"],
+        "type": "offline",
+    })
 
-start_time = time.time()
+# ------- RL AGENTS -------
+rl_agents = [
+    ("dqn_model_low_coverage_1.zip", "RL Low Coverage"),
+    ("dqn_model_low_penalty_1.zip", "RL Low Penalty"),
+    ("dqn_model_high_penalty_1.zip", "RL High Penalty"),
+]
 
-obs = env.reset()
-done = False
-chosen_order = []  # To store actions in order
-while not done:
-    action, _ = model.predict(obs, deterministic=True)
-    chosen_order.append(action)
-    obs, reward, done, info = env.step(action)
+alpha = 0.6
+beta = 0.3
+gamma = 0.1
 
-rl_time = time.time() - start_time
-final_coverage = env.current_coverage
-final_penalty = env.current_penalty
-selected_sources = list(env.selected_sources)
-# AFTER the episode ends:
-env.current_table = optimize_selection(env.current_table, env.UR)[0]
-final_cov_rl, _ = compute_overall_coverage(env.current_table, env.UR)
-final_pen_rl, _ = compute_overall_penalty(env.current_table, env.UR)
+for path, label in rl_agents:
+    print(f"\n--- Evaluating RL agent: {label} ---")
+    res = evaluate_rl_agent(path, sources_list, UR, alpha, beta, gamma)
+    results.append({
+        "variant": label,
+        "coverage": res["coverage"],
+        "penalty": res["penalty"],
+        "steps": res["steps"],
+        "time": res["time"],
+        "order": res["order"],
+        "type": "rl",
+    })
 
-print("\n=== RL Agent Result ===")
-print("\n📊 Evaluation Result")
-print("📦 Sources Used:", selected_sources)
-print("🏁 Final Reward:", final_coverage - final_penalty)
-print("\n🧾 Final Output Table:")
-print("📦 Source selection order:", list(env.selected_sources))
-print("📦 Final Coverage:", final_cov_rl)
-print("❗ Final Penalty:", final_pen_rl)
-print("Time taken:", rl_time, "seconds") 
-print(env.current_table)
-
-
-# --- Offline/Deterministic Baseline ---
-start_time = time.time()
-
-with suppress_output():
-    T_output, i , chosen_order= multi_source_algorithm(sources_list, UR, theta=1.0)
-    T_output, _ = optimize_selection(T_output, UR)
-
-offline_time = time.time() - start_time
-
-final_cov_off, _ = compute_overall_coverage(T_output, UR)
-final_pen_off, _ = compute_overall_penalty(T_output, UR)
-
-print("\n=== Offline Baseline Result ===")
-print("Final Coverage:", final_cov_off)
-print("Final Penalty:", final_pen_off)
-print("Order of sources (offline):", [f"s{idx}" for idx in chosen_order])     # for one-based (if you used i+1 above)
-print(offline_time, "seconds")
-print(T_output)
+# ------------ Save as DataFrame / CSV ---------------
+df = pd.DataFrame(results)
+# Convert list to string for CSV
+df["order"] = df["order"].apply(lambda x: ",".join(map(str, x)))
+df.to_csv("evaluation_summary.csv", index=False)
+print("\n=== SUMMARY TABLE ===\n")
+print(df)

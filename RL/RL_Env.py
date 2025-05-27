@@ -72,8 +72,8 @@ class DataSelectionEnv(gym.Env):
 
         
         if action in self.selected_sources: #  Agent chooses a source it already selected
-            reward = 0  # punish invalid repeat
-            done = False
+            reward = -10  # punish invalid repeat
+            done = True
             self.steps_taken += 1
             info = {
                 "stop": False,

@@ -9,13 +9,16 @@ def dataframe_to_ur_dict(df):
             for col in df.columns
         }
 class SourceConstructor:
-    def __init__(self, T: pd.DataFrame, UR: dict):
+    def __init__(self, T: pd.DataFrame, UR: dict, seed: int = 42):
         self.T = T.copy()
         self.UR = UR  # UR is a dict {column: set(values)}
+        self.seed = seed
+        np.random.seed(seed)
+        random.seed(seed)
      
     def random_split(self, df, n_sources=10):
         """Randomly split a DataFrame into n sources."""
-        df_shuffled = df.sample(frac=1).reset_index(drop=True)
+        df_shuffled = df.sample(frac=1, random_state=self.seed).reset_index(drop=True)
         return np.array_split(df_shuffled, n_sources)
     
     def low_penalty_sources(self):
@@ -32,7 +35,7 @@ class SourceConstructor:
             new_row = {col: val for col, val in zip(columns, row_values)}
             for col in T_augmented.columns:
                 if col not in new_row:
-                    new_row[col] = f"default_{random.randint(1000,9999)}"
+                    new_row[col] = f"default_{random.Random(self.seed).randint(1000,9999)}"
             T_augmented = pd.concat([T_augmented, pd.DataFrame([new_row])], ignore_index=True)
 
         return self.random_split(T_augmented, n_sources=10)
@@ -57,13 +60,14 @@ class SourceConstructor:
         for col, vals in self.UR.items():
             vals_list = list(vals)
             n_remove = max(1, int(len(vals_list) * remove_fraction))  # Remove at least 1 if possible
-            vals_to_remove = random.sample(vals_list, n_remove)
+            vals_to_remove = random.Random(self.seed).sample(vals_list, n_remove)
+
             ur_values_to_remove[col] = vals_to_remove
 
         # Now mutate T
         for col, vals in ur_values_to_remove.items():
             for val in vals:
-                random_replacement = f"noise_{random.randint(1000,9999)}"
+                random_replacement = f"noise_{random.Random(self.seed).randint(1000,9999)}"
                 T_mutated.loc[T_mutated[col] == val, col] = random_replacement
 
         return self.random_split(T_mutated, n_sources=10)
@@ -72,7 +76,7 @@ class SourceConstructor:
         """Introduce high-penalty structure by breaking perfect rows into polluted parts."""
         T_mutated = self.T.copy()
 
-        # ✅ Handle both dict and DataFrame UR formats
+        #  Handle both dict and DataFrame UR formats
         if isinstance(self.UR, pd.DataFrame):
             ur_columns = list(self.UR.columns)
             ur_dict = {
@@ -85,7 +89,7 @@ class SourceConstructor:
 
         print("UR format:", ur_dict)
 
-        # ✅ Flatten all UR values
+        #  Flatten all UR values
         ur_values_flat = set(val for vals in ur_dict.values() for val in vals)
 
         # ✅ Identify perfect rows
@@ -94,7 +98,7 @@ class SourceConstructor:
             if all(row[col] in ur_dict[col] for col in ur_columns):
                 perfect_rows.append((idx, row.copy()))
 
-        # ✅ Identify donor rows (0 UR values)
+        #  Identify donor rows (0 UR values)
         donor_rows = []
         for idx, row in T_mutated.iterrows():
             if all(row[col] not in ur_values_flat for col in ur_columns):

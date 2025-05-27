@@ -1,6 +1,6 @@
 import pandas as pd
 
-from Single_Source.Coverage_Guided_Row_Selection import algo_main, compute_overall_coverage, compute_overall_penalty, optimize_selection
+from Single_Source.Coverage_Guided_Row_Selection import algo_main, compute_overall_coverage, compute_overall_penalty, coverage_guided_row_selection, optimize_selection, penalty_optimization
 from helpers.Source_Constructors import SourceConstructor
 from helpers.Source_Constructors import dataframe_to_ur_dict
 from helpers.T_splitter_into_M import split_by_columns, split_by_diagonal, split_by_hybrid, split_by_keywords, split_by_overlapping_rows, split_by_rows
@@ -13,59 +13,47 @@ def get_next_M(sources, i):
         return sources[i]
     return None  
 
-def multi_source_algorithm(sources, UR, theta):
-    """
-    Implements the Multi-Source Algorithm to iteratively apply 
-    Coverage-Guided Row Selection until the required coverage is reached.
-
-    Returns:
-        DataFrame: The completed table T.
-    """
-    T = pd.DataFrame()  # Start with an empty table
+def multi_source_algorithm(sources, UR, theta, method="algo_main"):
+    T = pd.DataFrame()
+    chosen_order = []
     i = 0
     terminate = False
-    chosen_order = []  # To keep track of the order of selected sources
-    while not terminate:
-        terminate = True  
-        
 
+    # STEP 1: Incrementally select sources with coverage_guided_row_selection
+    while not terminate:
+        terminate = True
         M_i = get_next_M(sources, i)
         if M_i is None:
-            print("No more valid sources left.")
-            return T, i + 1, chosen_order   # Stop and return the last obtained table
-        
+            break  # No more sources
         common_cols = [col for col in UR.columns if col in M_i.columns and col != "Identifiant"]
-        chosen_order.append(i+1)
+        chosen_order.append(i + 1)
         if not common_cols:
-            #print(f"Skipping M_{i} as it has no common columns with UR.")
             i += 1
-            terminate=False
+            terminate = False
             continue
-            
-        # Apply the coverage-guided selection (blackbox function)
-        new_T = algo_main(M_i, UR, theta)
-        
+        new_T, _ = coverage_guided_row_selection(M_i, UR, theta)
         if T.empty:
             T = new_T
-        elif new_T.empty:
-            print(f"Skipping M_{i} as it produced an empty table.")
-        else:
-            print(f"Columns in new_T: {new_T.columns.tolist()}")
+        elif not new_T.empty:
             T = T.set_index("Identifiant").combine_first(new_T.set_index("Identifiant")).reset_index()
-        
-        # Compute current coverage
         final_cov, _ = compute_overall_coverage(T, UR)
-        
         if final_cov >= theta:
-            print("M" , i, "was the last source needed", "Coverage: ", final_cov)
-            return T, i + 1   # Stop if coverage requirement is met
-        else:
-            print("M" , i, "was not enough", "Coverage: ", final_cov)
-            print(T)
-            i += 1
-            terminate = False  # Continue to the next source
+            break
+        i += 1
+        terminate = False
 
-    return T, i + 1 , chosen_order  # Return the last obtained table, even if coverage is not met
+    # STEP 2: If coverage_penalty, run penalty_optimization at the end
+    if method == "coverage_penalty" and final_cov >= theta:
+        T, _ = penalty_optimization(T, pd.concat(sources, ignore_index=True), UR, i, theta)
+
+    # STEP 3: If algo_main, run optimize_selection at the end
+    if method == "algo_main" and final_cov >= theta:
+        T, _ = penalty_optimization(T, pd.concat(sources, ignore_index=True), UR, i, theta)
+        T, _ = optimize_selection(T, UR)
+
+    return T, i + 1, chosen_order
+
+
 
 
 # --- Main Function ---
@@ -73,7 +61,7 @@ def main():
     """ Main function to split T and run the multi-source algorithm. """
     # Load the test case
     test_cases = TestCases()
-    T_input, UR = test_cases.get_case(20)  # Load predefined test case 1
+    T_input, UR = test_cases.get_case(21)  # Load predefined test case 1
     #UR = dataframe_to_ur_dict(UR)
     theta = 1  # Example coverage threshold
     constructor = SourceConstructor(T_input, UR)
@@ -101,7 +89,7 @@ def main():
     #sources = split_by_keywords(T_input)
     
     
-    T_output, _ = multi_source_algorithm(sources, UR, theta)
+    T_output, _, _ = multi_source_algorithm(sources, UR, theta, method="algo_main") 
     T_output, _ = optimize_selection(T_output, UR)
 
     # Compute final coverage
