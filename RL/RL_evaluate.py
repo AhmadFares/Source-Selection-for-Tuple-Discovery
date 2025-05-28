@@ -2,6 +2,7 @@ from contextlib import contextmanager
 import os
 import time
 import sys
+import numpy as np
 import pandas as pd
 from stable_baselines3 import DQN
 from Multi_Source.Multi_Source import multi_source_algorithm
@@ -12,6 +13,7 @@ from Single_Source.Coverage_Guided_Row_Selection import (
     optimize_selection,
 )
 from helpers.Source_Constructors import SourceConstructor
+from helpers.T_splitter_into_M import split_uniform_by_rows
 from helpers.test_cases import TestCases
 from helpers.statistics_computation import compute_UR_value_frequencies_in_sources
 
@@ -45,6 +47,7 @@ def evaluate_offline(method, sources_list, UR, theta):
 
 def evaluate_rl_agent(model_path, sources_list, UR, alpha, beta, gamma):
     value_index, source_stats = compute_UR_value_frequencies_in_sources(sources_list, UR)
+    #zero_stats = {i: np.zeros_like(v) for i, v in source_stats.items()}
     env = DataSelectionEnv(
         sources_list, UR, statistics=source_stats, value_index=value_index,
         alpha=alpha, beta=beta, gamma=gamma
@@ -76,6 +79,7 @@ test_cases = TestCases()
 test_cases.load_mathe_case()
 T, UR = test_cases.get_case(20)
 constructor = SourceConstructor(T, UR, seed=42)  # Seed for reproducibility!
+#sources_list= split_uniform_by_rows(T, 10)
 sources_list = constructor.high_penalty_sources()
 theta = 1.0
 

@@ -94,9 +94,7 @@ def train_model(T, UR, sources, alpha, beta, gamma, save_path):
              coverages=callback.coverages,
              penalties=callback.penalties,
              steps=callback.steps,
-             stopped=callback.stopped,
-            actions=callback.actions,
-            q_values=np.array(callback.q_values))
+             stopped=callback.stopped)
 
     plot_and_save_sns(callback.rewards, "Reward", save_path)
     plot_and_save_sns(callback.coverages, "Coverage", save_path)
@@ -143,7 +141,7 @@ def run_all():
 
             for alpha in alpha_values:
                 for beta in beta_values:
-                    gamma = 1.0 - alpha - beta
+                    gamma = 1- alpha - beta  # Ensure gamma is derived from alpha and beta
                     save_dir = f"results_UR2/case_{case_id}/{variant_name}/alpha_{alpha}_beta_{beta}"
                     print(f"Training: Case={case_id}, Source={variant_name}, Alpha={alpha}, Beta={beta}, Gamma={gamma}")
 
